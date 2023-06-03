@@ -26,6 +26,10 @@
 #include<string.h>
 #include<stdio.h>
 
+#include "atk_mo1218_uart.h"
+
+uint8_t USART1_TxBUF[USART1_MAX_SENDLEN];
+uint8_t USART1_RxBUF[USART1_MAX_RECVLEN];
 uint8_t USART2_TxBUF[USART2_MAX_SENDLEN];
 uint8_t USART2_RxBUF[USART2_MAX_RECVLEN];
 uint8_t USART3_TxBUF[USART3_MAX_SENDLEN];
@@ -36,9 +40,39 @@ volatile uint8_t print_mode = 1;
 
 /* USER CODE END 0 */
 
+UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 
+/* USART1 init function */
+
+void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 115200;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
+
+}
 /* USART2 init function */
 
 void MX_USART2_UART_Init(void)
@@ -102,7 +136,34 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
 {
 
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-  if(uartHandle->Instance==USART2)
+  if(uartHandle->Instance==USART1)
+  {
+  /* USER CODE BEGIN USART1_MspInit 0 */
+
+  /* USER CODE END USART1_MspInit 0 */
+    /* USART1 clock enable */
+    __HAL_RCC_USART1_CLK_ENABLE();
+
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    /**USART1 GPIO Configuration
+    PA9     ------> USART1_TX
+    PA10     ------> USART1_RX
+    */
+    GPIO_InitStruct.Pin = GPIO_PIN_9;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_10;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /* USER CODE BEGIN USART1_MspInit 1 */
+
+  /* USER CODE END USART1_MspInit 1 */
+  }
+  else if(uartHandle->Instance==USART2)
   {
   /* USER CODE BEGIN USART2_MspInit 0 */
 
@@ -167,7 +228,25 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
 void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 {
 
-  if(uartHandle->Instance==USART2)
+  if(uartHandle->Instance==USART1)
+  {
+  /* USER CODE BEGIN USART1_MspDeInit 0 */
+
+  /* USER CODE END USART1_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __HAL_RCC_USART1_CLK_DISABLE();
+
+    /**USART1 GPIO Configuration
+    PA9     ------> USART1_TX
+    PA10     ------> USART1_RX
+    */
+    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_9|GPIO_PIN_10);
+
+  /* USER CODE BEGIN USART1_MspDeInit 1 */
+
+  /* USER CODE END USART1_MspDeInit 1 */
+  }
+  else if(uartHandle->Instance==USART2)
   {
   /* USER CODE BEGIN USART2_MspDeInit 0 */
 
@@ -222,13 +301,11 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
 	if(huart->Instance==USART2)
 	{
-    USART2_RxLen = Size;
-    USART2_RecvEndFlag = 1;
-    // 仅设置标志，后续再次开启中断在处理完上一次的 GPS 数据后进行
-    // 以下 todo: for test only
-    u2_printf((char*)USART2_RxBUF); 
+    u1_printf("(DBG) USART2 IDLE\r\n"); // for test
+    g_uart_rx_frame.sta.len = Size; /* 覆盖之前收到的数据 */
+    g_uart_rx_frame.sta.finsh = 1;  /* 标记帧接收完成 */
     u2_start_idle_receive();
-	}
+  }
   else if(huart->Instance==USART3)
 	{
     USART3_RxLen = Size;
@@ -257,7 +334,25 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
     __HAL_UART_CLEAR_OREFLAG(huart); /* 清除接收过载错误中断标志 */
     (void)huart->Instance->SR;       /* 先读SR寄存器，再读DR寄存器 */
     (void)huart->Instance->DR;
+    huart->RxState = HAL_UART_STATE_READY;
+    huart->Lock = HAL_UNLOCKED;
   }
+  if (huart->Instance == USART2)
+  {
+    u1_printf("(DBG) USART2 ORE\r\n");
+    u2_start_idle_receive();
+  }
+  else if (huart->Instance == USART3)
+  {
+    u1_printf("(DBG) USART3 ORE\r\n");
+    u3_start_idle_receive();
+  }
+  else
+  {
+    u1_printf("(DBG) ORE ERROR\r\n");
+  }
+  
+  
 }
 
 /**
@@ -266,9 +361,10 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
  */
 void u2_start_idle_receive(void)
 {
-  USART2_RecvEndFlag = 0;
-  memset(USART2_RxBUF, 0, USART2_MAX_RECVLEN);
-  HAL_UARTEx_ReceiveToIdle_IT(&huart2, USART2_RxBUF, USART2_MAX_RECVLEN);
+  // USART2_RecvEndFlag = 0;
+  // memset(USART2_RxBUF, 0, USART2_MAX_RECVLEN);
+  // HAL_UARTEx_ReceiveToIdle_IT(&huart2, USART2_RxBUF, USART2_MAX_RECVLEN);
+  HAL_UARTEx_ReceiveToIdle_IT(&huart2, g_uart_rx_frame.buf, ATK_MO1218_UART_RX_BUF_SIZE);
 }
 
 /**
@@ -280,6 +376,35 @@ void u3_start_idle_receive(void)
   USART3_RecvEndFlag = 0;
   memset(USART3_RxBUF, 0, USART3_MAX_RECVLEN);
   HAL_UARTEx_ReceiveToIdle_IT(&huart3, USART3_RxBUF, USART3_MAX_RECVLEN);
+}
+
+/**
+ * @description: 向 USART1 串口发送缓冲区中字符串 注意，\00将被移除
+ * @param {char} *fmt 需要发送的字符串
+ * @return {*}
+ */
+void u1_printf(char *fmt, ...)
+{
+  memset(USART1_TxBUF, 0, USART1_MAX_SENDLEN);
+  uint16_t i, j;
+  va_list ap;
+  va_start(ap, fmt);
+  vsprintf((char *)USART1_TxBUF, fmt, ap);
+  va_end(ap);
+
+  for (i = 0; i < USART1_MAX_SENDLEN; i++)
+  {
+    j = i + 1;
+    if (USART1_TxBUF[i] == '\00')
+    {
+      for (; j < USART1_MAX_SENDLEN; j++)
+      {
+        USART1_TxBUF[j - 1] = USART1_TxBUF[j];
+      }
+    }
+  }
+  i = strlen((const char *)USART1_TxBUF);
+  HAL_UART_Transmit(&huart1, (uint8_t *)USART1_TxBUF, i, 200);
 }
 
 /**

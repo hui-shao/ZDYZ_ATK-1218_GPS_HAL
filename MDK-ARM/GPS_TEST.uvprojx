@@ -395,6 +395,26 @@
           <GroupName>Application/User/Core</GroupName>
           <Files>
             <File>
+              <FileName>atk_mo1218_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\atk_mo1218_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>atk_mo1218_nmea_msg.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\atk_mo1218_nmea_msg.c</FilePath>
+            </File>
+            <File>
+              <FileName>atk_mo1218_bin_msg.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\atk_mo1218_bin_msg.c</FilePath>
+            </File>
+            <File>
+              <FileName>atk_mo1218.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\atk_mo1218.c</FilePath>
+            </File>
+            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/main.c</FilePath>
@@ -418,6 +438,11 @@
               <FileName>stm32f1xx_hal_msp.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/stm32f1xx_hal_msp.c</FilePath>
+            </File>
+            <File>
+              <FileName>delay.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\delay.c</FilePath>
             </File>
           </Files>
         </Group>
