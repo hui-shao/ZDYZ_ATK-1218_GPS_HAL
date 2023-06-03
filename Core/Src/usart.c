@@ -29,8 +29,10 @@
 uint8_t USART2_TxBUF[USART2_MAX_SENDLEN];
 uint8_t USART2_RxBUF[USART2_MAX_RECVLEN];
 uint8_t USART3_TxBUF[USART3_MAX_SENDLEN];
-volatile uint16_t USART2_RxLen = 0;
-volatile uint8_t USART2_RecvEndFlag = 0;
+uint8_t USART3_RxBUF[USART3_MAX_RECVLEN];
+volatile uint16_t USART2_RxLen = 0, USART3_RxLen = 0;
+volatile uint8_t USART2_RecvEndFlag = 0, USART3_RecvEndFlag = 0;
+volatile uint8_t print_mode = 1;
 
 /* USER CODE END 0 */
 
@@ -124,7 +126,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
     /* USART2 interrupt Init */
-    HAL_NVIC_SetPriority(USART2_IRQn, 1, 0);
+    HAL_NVIC_SetPriority(USART2_IRQn, 1, 1);
     HAL_NVIC_EnableIRQ(USART2_IRQn);
   /* USER CODE BEGIN USART2_MspInit 1 */
 
@@ -153,6 +155,9 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+    /* USART3 interrupt Init */
+    HAL_NVIC_SetPriority(USART3_IRQn, 1, 0);
+    HAL_NVIC_EnableIRQ(USART3_IRQn);
   /* USER CODE BEGIN USART3_MspInit 1 */
 
   /* USER CODE END USART3_MspInit 1 */
@@ -196,6 +201,8 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
     */
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_10|GPIO_PIN_11);
 
+    /* USART3 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(USART3_IRQn);
   /* USER CODE BEGIN USART3_MspDeInit 1 */
 
   /* USER CODE END USART3_MspDeInit 1 */
@@ -222,6 +229,25 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
     u2_printf((char*)USART2_RxBUF); 
     u2_start_idle_receive();
 	}
+  else if(huart->Instance==USART3)
+	{
+    USART3_RxLen = Size;
+    USART3_RecvEndFlag = 1;
+    // 进入此中断，USART3 接受到的数据存放在 USART3_RxBUF 里面，可以调试以下看看是什么，然后做判断。
+    // 判断举例：
+    if (USART3_RxBUF[1] == 0x01)
+    {
+      print_mode = 1; // print mode 用于后续控制打印给串口屏的内容
+    }
+    else if (USART3_RxBUF[1] == 0x02)
+    {
+      print_mode = 2;
+    }
+    
+    // 以下 todo: for test only, 实现把接受到的数据从 USART3 重新发送出去。
+    HAL_UART_Transmit(&huart3, USART3_RxBUF, 10, 200);
+    u3_start_idle_receive();
+	}
 }
 
 /**
@@ -233,6 +259,17 @@ void u2_start_idle_receive(void)
   USART2_RecvEndFlag = 0;
   memset(USART2_RxBUF, 0, USART2_MAX_RECVLEN);
   HAL_UARTEx_ReceiveToIdle_IT(&huart2, USART2_RxBUF, USART2_MAX_RECVLEN);
+}
+
+/**
+ * @description: 启动串口2接受空闲中断
+ * @return {*}
+ */
+void u3_start_idle_receive(void)
+{
+  USART3_RecvEndFlag = 0;
+  memset(USART3_RxBUF, 0, USART3_MAX_RECVLEN);
+  HAL_UARTEx_ReceiveToIdle_IT(&huart3, USART3_RxBUF, USART3_MAX_RECVLEN);
 }
 
 /**

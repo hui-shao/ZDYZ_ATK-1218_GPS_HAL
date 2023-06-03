@@ -39,16 +39,20 @@ extern UART_HandleTypeDef huart3;
 /* USER CODE BEGIN Private defines */
 
 #define USART2_MAX_SENDLEN 512
-#define USART2_MAX_RECVLEN 512
+#define USART2_MAX_RECVLEN 1024
 #define USART3_MAX_SENDLEN 256
+#define USART3_MAX_RECVLEN 256
 
 extern uint8_t USART2_TxBUF[USART2_MAX_SENDLEN];
 extern uint8_t USART2_RxBUF[USART2_MAX_RECVLEN];
 extern uint8_t USART3_TxBUF[USART3_MAX_SENDLEN];
-extern volatile uint16_t USART2_RxLen;
-extern volatile uint8_t USART2_RecvEndFlag;
+extern uint8_t USART3_RxBUF[USART3_MAX_RECVLEN];
+extern volatile uint16_t USART2_RxLen, USART3_RxLen;
+extern volatile uint8_t USART2_RecvEndFlag, USART3_RecvEndFlag;
+extern volatile uint8_t print_mode;
 
 void u2_start_idle_receive(void);
+void u3_start_idle_receive(void);
 void u2_printf(char *fmt, ...);
 void u3_printf(char *fmt, ...);
 

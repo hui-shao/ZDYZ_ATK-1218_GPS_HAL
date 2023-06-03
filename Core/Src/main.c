@@ -91,6 +91,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   u2_start_idle_receive();
+  u3_start_idle_receive();
   
   /* USER CODE END 2 */
 
