@@ -250,6 +250,16 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 	}
 }
 
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+  if (__HAL_UART_GET_FLAG(huart, UART_FLAG_ORE) != RESET) /* UART接收过载错误中断 */
+  {
+    __HAL_UART_CLEAR_OREFLAG(huart); /* 清除接收过载错误中断标志 */
+    (void)huart->Instance->SR;       /* 先读SR寄存器，再读DR寄存器 */
+    (void)huart->Instance->DR;
+  }
+}
+
 /**
  * @description: 启动串口2接受空闲中断
  * @return {*}
