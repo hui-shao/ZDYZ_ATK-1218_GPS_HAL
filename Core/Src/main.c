@@ -81,11 +81,11 @@ uint8_t user_gps_init(void)
 
   /* 初始化ATK-MO1218模块 */
   ret = atk_mo1218_init(38400);  // 注意 UART 初始化已经由 CubeMX 接管，此处设置的波特率无效。
-  if (ret != 0)
-  {
-    u1_printf("ATK-MO1218 init failed!\r\n");
-    return 1;
-  }
+  // if (ret != 0)
+  // {
+  //   u1_printf("ATK-MO1218 init failed!\r\n");
+  //   return 1;
+  // }
 
   /* 配置ATK-MO1218模块 */
   ret = atk_mo1218_factory_reset(ATK_MO1218_FACTORY_RESET_REBOOT);
@@ -229,8 +229,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    user_gps_getdata();
-    delay_ms(800);
+    // user_gps_getdata();
+    delay_ms(200);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

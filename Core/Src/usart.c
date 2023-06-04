@@ -304,6 +304,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
     u1_printf("(DBG) USART2 IDLE\r\n"); // for test
     g_uart_rx_frame.sta.len = Size; /* 覆盖之前收到的数据 */
     g_uart_rx_frame.sta.finsh = 1;  /* 标记帧接收完成 */
+    user_gps_getdata();
     u2_start_idle_receive();
   }
   else if(huart->Instance==USART3)
@@ -364,6 +365,9 @@ void u2_start_idle_receive(void)
   // USART2_RecvEndFlag = 0;
   // memset(USART2_RxBUF, 0, USART2_MAX_RECVLEN);
   // HAL_UARTEx_ReceiveToIdle_IT(&huart2, USART2_RxBUF, USART2_MAX_RECVLEN);
+  g_uart_rx_frame.sta.len = 0;
+  g_uart_rx_frame.sta.finsh = 0;
+  memset(g_uart_rx_frame.buf, 0, ATK_MO1218_UART_RX_BUF_SIZE);
   HAL_UARTEx_ReceiveToIdle_IT(&huart2, g_uart_rx_frame.buf, ATK_MO1218_UART_RX_BUF_SIZE);
 }
 

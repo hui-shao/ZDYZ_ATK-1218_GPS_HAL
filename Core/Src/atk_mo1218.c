@@ -106,7 +106,7 @@ uint8_t atk_mo1218_update(atk_mo1218_time_t *utc, atk_mo1218_position_t *positio
     gnrmc.done = 0;
     gnvtg.done = 0;
     
-    atk_mo1218_uart_rx_restart();
+    // atk_mo1218_uart_rx_restart();
     while (timeout > 0)
     {
         buf = atk_mo1218_uart_rx_get_frame();

@@ -54,6 +54,8 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 
+void user_gps_getdata(void);
+
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
