@@ -44,6 +44,7 @@ UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 DMA_HandleTypeDef hdma_usart2_rx;
+DMA_HandleTypeDef hdma_usart3_rx;
 
 /* USART1 init function */
 
@@ -234,8 +235,25 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+    /* USART3 DMA Init */
+    /* USART3_RX Init */
+    hdma_usart3_rx.Instance = DMA1_Channel3;
+    hdma_usart3_rx.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    hdma_usart3_rx.Init.PeriphInc = DMA_PINC_DISABLE;
+    hdma_usart3_rx.Init.MemInc = DMA_MINC_ENABLE;
+    hdma_usart3_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+    hdma_usart3_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+    hdma_usart3_rx.Init.Mode = DMA_NORMAL;
+    hdma_usart3_rx.Init.Priority = DMA_PRIORITY_MEDIUM;
+    if (HAL_DMA_Init(&hdma_usart3_rx) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    __HAL_LINKDMA(uartHandle,hdmarx,hdma_usart3_rx);
+
     /* USART3 interrupt Init */
-    HAL_NVIC_SetPriority(USART3_IRQn, 1, 0);
+    HAL_NVIC_SetPriority(USART3_IRQn, 1, 1);
     HAL_NVIC_EnableIRQ(USART3_IRQn);
   /* USER CODE BEGIN USART3_MspInit 1 */
 
@@ -301,6 +319,9 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
     */
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_10|GPIO_PIN_11);
 
+    /* USART3 DMA DeInit */
+    HAL_DMA_DeInit(uartHandle->hdmarx);
+
     /* USART3 interrupt Deinit */
     HAL_NVIC_DisableIRQ(USART3_IRQn);
   /* USER CODE BEGIN USART3_MspDeInit 1 */
@@ -342,11 +363,11 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
     {
       print_mode = 2;
     }
-    
+
     // 以下 todo: for test only, 实现把接受到的数据从 USART3 重新发送出去。
-    HAL_UART_Transmit(&huart3, USART3_RxBUF, 10, 200);
+    u3_printf((char *)USART3_RxBUF);
     u3_start_idle_receive();
-	}
+  }
 }
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
@@ -373,8 +394,6 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
   {
     u1_printf("(DBG) ORE ERROR\r\n");
   }
-  
-  
 }
 
 /**
@@ -401,7 +420,7 @@ void u3_start_idle_receive(void)
 {
   USART3_RecvEndFlag = 0;
   memset(USART3_RxBUF, 0, USART3_MAX_RECVLEN);
-  HAL_UARTEx_ReceiveToIdle_IT(&huart3, USART3_RxBUF, USART3_MAX_RECVLEN);
+  HAL_UARTEx_ReceiveToIdle_DMA(&huart3, USART3_RxBUF, USART3_MAX_RECVLEN);
 }
 
 /**
