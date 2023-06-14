@@ -2,6 +2,7 @@ MDK-ARM/GPS_TEST/*
 MDK-ARM/.vscode/
 .idea/
 .vs/
+PRIVATE/
 
 !MDK-ARM/GPS_TEST/*.hex
 MDK-ARM/EventRecorderStub.scvd
